@@ -1,23 +1,27 @@
 <?php
 
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\PostController;
+use Illuminate\Session\Store;
 use Illuminate\Support\Facades\Route;
 
-Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login', [AuthController::class, 'login']);
+Route::post('auth/register', [AuthController::class, 'register']);
+Route::post('auth/login', [AuthController::class, 'login']);
 
 Route::middleware('auth:sanctum')->group(function () {
 
-    Route::post('/logout', [AuthController::class, 'logout']);
-
+    Route::post('auth/logout', [AuthController::class, 'logout']);
 
     /*
-    // CRUD Routes
-    Route::apiResource('posts', PostController::class);
-    Route::apiResource('categories', CategoryController::class);
-    Route::apiResource('comments', CommentController::class);
-    */
+    Route::post('posts', [PostController::class, 'store']);
+    Route::patch('posts/{id}', [PostController::class, 'update']);
+    Route::delete('posts/{id}', [PostController::class, 'destroy']);
+    Route::get('posts', [PostController::class, 'index']);
+    Route::get('posts/{id}', [PostController::class, 'show']);
+
+    Route::post('posts/{id}/comments', [CommentController::class,'store']);
+    Route::get('comments/{id}', [CommentController::class,'show']);
+*/
+    
 });
