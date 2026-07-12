@@ -17,7 +17,7 @@ class PostController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
-        $posts = $user->posts()->latest()->get();
+        $posts = $user->posts()->with('comments')->latest()->get();
 
         return response()->json($posts);
     }
@@ -45,7 +45,7 @@ class PostController extends Controller
             return $response;
         }
 
-        return response()->json($post->load('category'));
+        return response()->json($post->load('category', 'comments'));
     }
 
     public function update(UpdatePostRequest $request, Post $post): JsonResponse
