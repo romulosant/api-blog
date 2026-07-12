@@ -31,9 +31,9 @@ class PostController extends Controller
 
         $post = $user->posts()->create([
             'category_id' => $validated['category_id'],
-            'title'       => $validated['title'],
-            'slug'        => Str::slug($validated['title']),
-            'content'     => $validated['content'],
+            'title' => $validated['title'],
+            'slug' => Str::slug($validated['title']),
+            'content' => $validated['content'],
         ]);
 
         return response()->json($post, 201);
@@ -41,18 +41,14 @@ class PostController extends Controller
 
     public function show(Post $post): JsonResponse
     {
-        if ($response = $this->denyIfNotOwner($post)) {
-            return $response;
-        }
+        $this->authorize('view', $post);
 
         return response()->json($post->load('category', 'comments'));
     }
 
     public function update(UpdatePostRequest $request, Post $post): JsonResponse
     {
-        if ($response = $this->denyIfNotOwner($post)) {
-            return $response;
-        }
+        $this->authorize('update', $post);
 
         $validated = $request->validated();
 
@@ -67,24 +63,10 @@ class PostController extends Controller
 
     public function destroy(Post $post): JsonResponse
     {
-        if ($response = $this->denyIfNotOwner($post)) {
-            return $response;
-        }
+        $this->authorize('delete', $post);
 
         $post->delete();
 
         return response()->json(['message' => 'Post excluído com sucesso.'], 200);
-    }
-
-    private function denyIfNotOwner(Post $post): ?JsonResponse
-    {
-        /** @var User $user */
-        $user = Auth::user();
-
-        if ($post->user_id !== $user->id) {
-            return response()->json(['message' => 'Post não encontrado.'], 404);
-        }
-
-        return null;
     }
 }
