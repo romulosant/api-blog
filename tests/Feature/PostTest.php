@@ -118,7 +118,8 @@ class PostTest extends TestCase
 
         $response
             ->assertStatus(200)
-            ->assertJsonCount(2);
+            // index usa paginate() → posts ficam em "data"
+            ->assertJsonCount(2, 'data');
     }
 
     public function test_user_can_view_own_post(): void
