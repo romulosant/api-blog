@@ -5,19 +5,47 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StorePostRequest;
 use App\Http\Requests\UpdatePostRequest;
 use App\Models\Post;
-use App\Models\User;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;   // ← LINHA NOVA (resolve Intelephense)
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
 class PostController extends Controller
 {
-    public function index(): JsonResponse
-    {
-        /** @var User $user */
-        $user = Auth::user();
+    use AuthorizesRequests;   // ← TRAIT EXPLÍCITA (isso mata o erro)
 
-        $posts = $user->posts()->with('comments')->latest()->get();
+    /**
+     * Lista posts do usuário autenticado com filtros opcionais:
+     * - category: filtra pelo nome da categoria (?category=laravel)
+     * - search: busca no título (?search=eloquent)
+     * - page / per_page: paginação (?page=1&per_page=10)
+     */
+    public function index(Request $request): JsonResponse
+    {
+        $user = auth()->user();
+
+        $query = $user->posts()
+            ->with(['comments', 'category'])
+            ->latest();
+
+        if ($request->filled('category')) {
+            $category = $request->query('category');
+
+            $query->whereHas('category', function ($q) use ($category) {
+                $q->where('name', $category);
+            });
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->query('search');
+
+            $query->where('title', 'like', '%' . $search . '%');
+        }
+
+        $perPage = $request->integer('per_page', 15);
+        $perPage = max(1, min($perPage, 100));
+
+        $posts = $query->paginate($perPage);
 
         return response()->json($posts);
     }
@@ -25,15 +53,13 @@ class PostController extends Controller
     public function store(StorePostRequest $request): JsonResponse
     {
         $validated = $request->validated();
-
-        /** @var User $user */
-        $user = Auth::user();
+        $user = auth()->user();
 
         $post = $user->posts()->create([
             'category_id' => $validated['category_id'],
-            'title'       => $validated['title'],
-            'slug'        => Str::slug($validated['title']),
-            'content'     => $validated['content'],
+            'title' => $validated['title'],
+            'slug' => Str::slug($validated['title']),
+            'content' => $validated['content'],
         ]);
 
         return response()->json($post, 201);
@@ -41,19 +67,14 @@ class PostController extends Controller
 
     public function show(Post $post): JsonResponse
     {
-        if ($response = $this->denyIfNotOwner($post)) {
-            return $response;
-        }
+        $this->authorize('view', $post);      // ← agora o Intelephense reconhece
 
         return response()->json($post->load('category', 'comments'));
     }
 
     public function update(UpdatePostRequest $request, Post $post): JsonResponse
     {
-        if ($response = $this->denyIfNotOwner($post)) {
-            return $response;
-        }
-
+        $this->authorize('update', $post);    // ← só autor edita
         $validated = $request->validated();
 
         if (isset($validated['title'])) {
@@ -67,24 +88,9 @@ class PostController extends Controller
 
     public function destroy(Post $post): JsonResponse
     {
-        if ($response = $this->denyIfNotOwner($post)) {
-            return $response;
-        }
-
+        $this->authorize('delete', $post);    // ← só autor deleta
         $post->delete();
 
         return response()->json(['message' => 'Post excluído com sucesso.'], 200);
-    }
-
-    private function denyIfNotOwner(Post $post): ?JsonResponse
-    {
-        /** @var User $user */
-        $user = Auth::user();
-
-        if ($post->user_id !== $user->id) {
-            return response()->json(['message' => 'Post não encontrado.'], 404);
-        }
-
-        return null;
     }
 }
