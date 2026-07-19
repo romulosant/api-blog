@@ -5,14 +5,14 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StorePostRequest;
 use App\Http\Requests\UpdatePostRequest;
 use App\Models\Post;
-use Illuminate\Foundation\Auth\Access\AuthorizesRequests;   // ← LINHA NOVA (resolve Intelephense)
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
 class PostController extends Controller
 {
-    use AuthorizesRequests;   // ← TRAIT EXPLÍCITA (isso mata o erro)
+    use AuthorizesRequests;
 
     /**
      * Lista posts do usuário autenticado com filtros opcionais:
@@ -67,14 +67,15 @@ class PostController extends Controller
 
     public function show(Post $post): JsonResponse
     {
-        $this->authorize('view', $post);      // ← agora o Intelephense reconhece
+        $this->authorize('view', $post);
 
         return response()->json($post->load('category', 'comments'));
     }
 
     public function update(UpdatePostRequest $request, Post $post): JsonResponse
     {
-        $this->authorize('update', $post);    // ← só autor edita
+        $this->authorize('update', $post);
+
         $validated = $request->validated();
 
         if (isset($validated['title'])) {
@@ -88,7 +89,8 @@ class PostController extends Controller
 
     public function destroy(Post $post): JsonResponse
     {
-        $this->authorize('delete', $post);    // ← só autor deleta
+        $this->authorize('delete', $post);
+
         $post->delete();
 
         return response()->json(['message' => 'Post excluído com sucesso.'], 200);

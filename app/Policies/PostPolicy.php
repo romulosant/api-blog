@@ -5,17 +5,17 @@ namespace App\Policies;
 use App\Models\Post;
 use App\Models\User;
 
-
 class PostPolicy
 {
     /**
-     * Admin tem acesso total (usando coluna is_admin)
+     * Admins have full access to every post.
      */
     public function before(User $user, string $ability): ?bool
     {
-        if ($user->is_admin) {        // ← removido hasRole
+        if ($user->is_admin) {
             return true;
         }
+
         return null;
     }
 

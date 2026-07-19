@@ -9,8 +9,7 @@ class UpdatePostRequest extends FormRequest
     /**
      * Determine if the user is authorized to make this request.
      *
-     * Ownership is enforced separately in the controller (PostController::denyIfNotOwner),
-     * which returns a custom 404 response instead of the default 403 from FormRequest.
+     * Ownership is enforced in PostPolicy via $this->authorize() in PostController.
      */
     public function authorize(): bool
     {
